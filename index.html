@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Tracker — Trilha Dev</title>
-<link rel="icon" href="https://imgur.com/a/0qfVfeP">
+<link rel="icon" href="/icon/acompanhar.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -196,6 +196,32 @@ textarea{resize:vertical;min-height:70px;}
 
 #yt-container{position:fixed;bottom:0;right:0;width:1px;height:1px;overflow:hidden;pointer-events:none;opacity:.01;}
 
+/* AUTH */
+.auth-btn{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+.auth-btn:hover{border-color:var(--b);color:var(--b);}
+.auth-btn.logged{border-color:var(--g);color:var(--g);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s;cursor:default;}
+.sync-dot.synced{background:var(--g);}
+.sync-dot.syncing{background:var(--y);animation:blink 1s infinite;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:28px 32px;width:100%;max-width:380px;position:relative;}
+.modal-box h3{font-size:17px;font-weight:800;margin-bottom:6px;}
+.modal-box .modal-sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px;}
+.modal-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-err{font-family:var(--mono);font-size:11px;color:var(--r);margin-top:8px;min-height:16px;}
+.modal-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.mtab2{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;background:none;border:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.mtab2.active{color:var(--b);border-bottom-color:var(--b);}
+/* CUSTOM LOFI */
+.lp-custom{position:relative;display:inline-block;}
+.lp-del{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:var(--r);color:#fff;border:none;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;padding:0;}
+.lp-custom:hover .lp-del{display:flex;}
+.add-station-form{margin-top:10px;display:none;flex-direction:column;gap:8px;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:10px;}
+.add-station-form.open{display:flex;}
+.add-station-btn{font-family:var(--mono);font-size:10px;padding:5px 11px;border-radius:100px;border:1px dashed var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all .2s;margin-top:4px;}
+.add-station-btn:hover{border-color:var(--g);color:var(--g);}
 @media(max-width:700px){
   .stat-grid{grid-template-columns:1fr 1fr;}
   .two-col{grid-template-columns:1fr;}
@@ -218,6 +244,10 @@ textarea{resize:vertical;min-height:70px;}
     <button class="tab" id="tab-registrar" onclick="showPage('registrar',this)">Registrar</button>
     <button class="tab" id="tab-historico" onclick="showPage('historico',this)">Histórico</button>
     <button class="tab" id="tab-plano" onclick="showPage('plano',this)">Plano</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;padding-left:16px;flex-shrink:0;">
+    <div class="sync-dot" id="sync-dot" title="Não sincronizado — faça login"></div>
+    <button class="auth-btn" id="auth-btn" onclick="openAuthModal()">Entrar</button>
   </div>
 </nav>
 
@@ -321,6 +351,17 @@ textarea{resize:vertical;min-height:70px;}
           <span style="font-family:var(--mono);font-size:10px;color:var(--muted);min-width:28px;" id="vol-label">50%</span>
         </div>
 
+        <!-- Add custom MP3 station -->
+        <button class="add-station-btn" onclick="toggleAddStation()">+ Adicionar estação MP3</button>
+        <div class="add-station-form" id="add-station-form">
+          <div class="fg" style="margin-bottom:0;"><label>Nome da estação</label><input type="text" id="custom-station-name" placeholder="ex: Minha Playlist"></div>
+          <div class="fg" style="margin-bottom:0;"><label>Arquivo MP3</label><input type="file" id="custom-station-file" accept=".mp3,audio/mpeg"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-apply" onclick="saveCustomStation()" style="flex:1;">Salvar estação</button>
+            <button class="btn-apply" onclick="toggleAddStation()" style="flex:0;padding:9px 14px;background:rgba(255,255,255,.04);color:var(--muted);border-color:var(--border2);">Cancelar</button>
+          </div>
+        </div>
+
         <div class="lofi-status" id="lofi-status" style="display:none;">
           <div class="eq">
             <div class="eq-b" style="height:100%"></div><div class="eq-b" style="height:60%"></div>
@@ -409,328 +450,608 @@ textarea{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal" onclick="if(event.target===this)closeAuthModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAuthModal()">×</button>
+    <h3>Conta</h3>
+    <p class="modal-sub">Sincronize seu histórico entre dispositivos</p>
+    <!-- Logged-in state -->
+    <div id="auth-logged" style="display:none;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--g);margin-bottom:6px;">● Sincronizado</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px;" id="auth-email-display"></div>
+      <button class="btn" style="background:rgba(240,96,96,.15);color:var(--r);border:1px solid rgba(240,96,96,.3);width:100%;text-align:center;" onclick="doLogout()">Sair da conta</button>
+    </div>
+    <!-- Login/Register form -->
+    <div id="auth-form-section">
+      <div class="modal-tabs">
+        <button class="mtab2 active" id="atab-login" onclick="switchAuthTab('login')">Entrar</button>
+        <button class="mtab2" id="atab-reg" onclick="switchAuthTab('register')">Criar conta</button>
+      </div>
+      <div class="fg"><label>E-mail</label><input type="email" id="auth-email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div class="fg" style="margin-top:10px;"><label>Senha</label><input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"></div>
+      <div class="modal-err" id="auth-err"></div>
+      <button class="btn" style="width:100%;text-align:center;margin-top:14px;" onclick="submitAuth()" id="auth-submit">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// STORAGE
-const KEY='stv3';
-function getLogs(){try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];}}
-function saveLogs(l){try{localStorage.setItem(KEY,JSON.stringify(l));}catch{}}
+// ===== FIREBASE CONFIG =====
+// Crie seu projeto em https://console.firebase.google.com e substitua os valores abaixo.
+// Veja as instruções completas em CLAUDE.md.
+const FIREBASE_CONFIG = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME.firebaseapp.com",
+  projectId: "REPLACE_ME",
+  storageBucket: "REPLACE_ME.appspot.com",
+  messagingSenderId: "REPLACE_ME",
+  appId: "REPLACE_ME"
+};
 
-// NAV
-function showPage(id,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  if(el)el.classList.add('active');
-  if(id==='dashboard')renderDash();
-  if(id==='historico')renderHist();
-  if(id==='plano')renderPlano();
+let _db = null, _auth = null, currentUser = null;
+
+function initFirebase() {
+  try {
+    if (FIREBASE_CONFIG.apiKey === 'REPLACE_ME') return; // não configurado
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _auth = firebase.auth();
+    _db = firebase.firestore();
+    _auth.onAuthStateChanged(user => {
+      currentUser = user;
+      updateAuthUI();
+      if (user) syncFromFirestore();
+      else setSyncDot('off');
+    });
+  } catch(e) { console.warn('Firebase init failed:', e); }
 }
 
-// TOAST
-function toast(msg,col){
-  const e=document.getElementById('toast');
-  e.textContent=msg;e.style.background=col||'var(--g)';
-  e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2800);
+// ===== INDEXEDDB (armazenamento de MP3s locais) =====
+const IDB_NAME = 'lofi-db', IDB_STORE = 'mp3s';
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = e => rej(e);
+  });
 }
 
-// DATES
-function today(){return new Date().toISOString().slice(0,10);}
-function getWeekDates(){
-  const n=new Date(),d=n.getDay(),m=new Date(n);
-  m.setDate(n.getDate()-(d===0?6:d-1));
-  return Array.from({length:7},(_,i)=>{const x=new Date(m);x.setDate(m.getDate()+i);return x.toISOString().slice(0,10);});
+async function idbSave(key, data) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(data, key);
+    tx.oncomplete = res; tx.onerror = rej;
+  });
 }
-function getLast7(){return Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10);});}
-function fd(s){const[y,m,d]=s.split('-');return`${d}/${m}`;}
-function dn(s){return['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][new Date(s+'T12:00:00').getDay()];}
-function fh(h){return h%1===0?h+'h':h.toFixed(1)+'h';}
-function streak(logs){
-  if(!logs.length)return 0;
-  const dates=[...new Set(logs.map(l=>l.date))].sort().reverse();
-  let s=0,c=new Date();c.setHours(0,0,0,0);
-  for(const d of dates){const dd=new Date(d+'T12:00:00');const diff=Math.round((c-dd)/86400000);if(diff===0||diff===1){s++;c=dd;}else break;}
+
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = e => res(e.target.result); req.onerror = rej;
+  });
+}
+
+async function idbDelete(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = res; tx.onerror = rej;
+  });
+}
+
+// ===== STORAGE =====
+const KEY = 'stv3';
+const CUSTOM_KEY = 'lofi-custom';
+
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+}
+
+function saveLogs(l) {
+  try { localStorage.setItem(KEY, JSON.stringify(l)); } catch {}
+  if (currentUser && _db) syncToFirestore(l);
+}
+
+function setSyncDot(state) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'synced' ? ' synced' : state === 'syncing' ? ' syncing' : '');
+  dot.title = state === 'synced' ? 'Sincronizado com a nuvem' : state === 'syncing' ? 'Sincronizando...' : 'Não sincronizado — faça login';
+}
+
+async function syncToFirestore(logs) {
+  if (!currentUser || !_db) return;
+  setSyncDot('syncing');
+  try {
+    const colRef = _db.collection('users').doc(currentUser.uid).collection('logs');
+    const batch = _db.batch();
+    const snap = await colRef.get();
+    snap.docs.forEach(doc => batch.delete(doc.ref));
+    logs.forEach(log => batch.set(colRef.doc(String(log.id)), log));
+    await batch.commit();
+    setSyncDot('synced');
+  } catch(e) {
+    console.warn('Sync error:', e);
+    setSyncDot('off');
+  }
+}
+
+async function syncFromFirestore() {
+  if (!currentUser || !_db) return;
+  setSyncDot('syncing');
+  try {
+    const snap = await _db.collection('users').doc(currentUser.uid).collection('logs').get();
+    const remoteLogs = snap.docs.map(d => d.data());
+    const localLogs = getLogs();
+    const merged = [...localLogs];
+    remoteLogs.forEach(r => { if (!merged.find(l => l.id === r.id)) merged.push(r); });
+    merged.sort((a, b) => b.date.localeCompare(a.date));
+    localStorage.setItem(KEY, JSON.stringify(merged));
+    toast('☁ Histórico sincronizado!', 'var(--b)');
+    setSyncDot('synced');
+    renderDash();
+  } catch(e) {
+    console.warn('Sync from Firestore error:', e);
+    setSyncDot('off');
+  }
+}
+
+// ===== AUTH UI =====
+function openAuthModal() {
+  if (currentUser) {
+    document.getElementById('auth-form-section').style.display = 'none';
+    document.getElementById('auth-logged').style.display = 'block';
+    document.getElementById('auth-email-display').textContent = currentUser.email;
+  } else {
+    document.getElementById('auth-form-section').style.display = 'block';
+    document.getElementById('auth-logged').style.display = 'none';
+    document.getElementById('auth-err').textContent = '';
+  }
+  document.getElementById('auth-modal').classList.add('open');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('open');
+}
+
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('atab-login').className = 'mtab2' + (isLogin ? ' active' : '');
+  document.getElementById('atab-reg').className = 'mtab2' + (!isLogin ? ' active' : '');
+  document.getElementById('auth-submit').textContent = isLogin ? 'Entrar' : 'Criar conta';
+  document.getElementById('auth-err').textContent = '';
+}
+
+async function submitAuth() {
+  if (!_auth) {
+    document.getElementById('auth-err').textContent = 'Firebase não configurado. Consulte o CLAUDE.md.';
+    return;
+  }
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const isLogin = document.getElementById('atab-login').classList.contains('active');
+  document.getElementById('auth-err').textContent = '';
+  if (!email || !pass) { document.getElementById('auth-err').textContent = 'Preencha e-mail e senha.'; return; }
+  try {
+    if (isLogin) await _auth.signInWithEmailAndPassword(email, pass);
+    else await _auth.createUserWithEmailAndPassword(email, pass);
+    closeAuthModal();
+    toast('✓ Logado com sucesso!', 'var(--g)');
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found': 'Usuário não encontrado.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/email-already-in-use': 'E-mail já cadastrado.',
+      'auth/weak-password': 'Senha fraca (mín. 6 caracteres).',
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+    };
+    document.getElementById('auth-err').textContent = msgs[e.code] || e.message;
+  }
+}
+
+async function doLogout() {
+  if (_auth) await _auth.signOut();
+  closeAuthModal();
+  setSyncDot('off');
+  toast('Saiu da conta', 'var(--muted)');
+}
+
+function updateAuthUI() {
+  const btn = document.getElementById('auth-btn');
+  if (!btn) return;
+  if (currentUser) {
+    btn.textContent = currentUser.email.split('@')[0];
+    btn.classList.add('logged');
+    setSyncDot('synced');
+  } else {
+    btn.textContent = 'Entrar';
+    btn.classList.remove('logged');
+    setSyncDot('off');
+  }
+}
+
+// ===== CUSTOM LOFI STATIONS =====
+function getCustomStations() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch { return []; }
+}
+
+function saveCustomStations(arr) {
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(arr));
+}
+
+function toggleAddStation() {
+  const form = document.getElementById('add-station-form');
+  const isOpen = form.classList.contains('open');
+  form.classList.toggle('open');
+  if (!isOpen) {
+    document.getElementById('custom-station-name').value = '';
+    document.getElementById('custom-station-file').value = '';
+  }
+}
+
+async function saveCustomStation() {
+  const name = document.getElementById('custom-station-name').value.trim();
+  const file = document.getElementById('custom-station-file').files[0];
+  if (!name) { toast('⚠ Informe o nome da estação', 'var(--o)'); return; }
+  if (!file) { toast('⚠ Selecione um arquivo MP3', 'var(--o)'); return; }
+  toast('Salvando MP3...', 'var(--b)');
+  const key = 'custom_' + Date.now();
+  const buf = await file.arrayBuffer();
+  await idbSave(key, buf);
+  const stations = getCustomStations();
+  stations.push({ key, name, emoji: '🎵' });
+  saveCustomStations(stations);
+  toggleAddStation();
+  renderPresets();
+  toast('✓ Estação adicionada!', 'var(--g)');
+}
+
+async function deleteCustomStation(key) {
+  await idbDelete(key);
+  saveCustomStations(getCustomStations().filter(s => s.key !== key));
+  if (activePresetKey === key) stopLofi();
+  renderPresets();
+  toast('Estação removida', 'var(--r)');
+}
+
+// ===== NAV =====
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  if (id === 'dashboard') renderDash();
+  if (id === 'historico') renderHist();
+  if (id === 'plano') renderPlano();
+}
+
+// ===== TOAST =====
+function toast(msg, col) {
+  const e = document.getElementById('toast');
+  e.textContent = msg; e.style.background = col || 'var(--g)';
+  e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 2800);
+}
+
+// ===== DATES =====
+function today() { return new Date().toISOString().slice(0, 10); }
+function getWeekDates() {
+  const n = new Date(), d = n.getDay(), m = new Date(n);
+  m.setDate(n.getDate() - (d === 0 ? 6 : d - 1));
+  return Array.from({ length: 7 }, (_, i) => { const x = new Date(m); x.setDate(m.getDate() + i); return x.toISOString().slice(0, 10); });
+}
+function getLast7() { return Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d.toISOString().slice(0, 10); }); }
+function fd(s) { const [y, m, d] = s.split('-'); return `${d}/${m}`; }
+function dn(s) { return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][new Date(s + 'T12:00:00').getDay()]; }
+function fh(h) { return h % 1 === 0 ? h + 'h' : h.toFixed(1) + 'h'; }
+function streak(logs) {
+  if (!logs.length) return 0;
+  const dates = [...new Set(logs.map(l => l.date))].sort().reverse();
+  let s = 0, c = new Date(); c.setHours(0, 0, 0, 0);
+  for (const d of dates) { const dd = new Date(d + 'T12:00:00'); const diff = Math.round((c - dd) / 86400000); if (diff === 0 || diff === 1) { s++; c = dd; } else break; }
   return s;
 }
 
-// POMODORO
-const P={
-  mode:'focus',running:false,
-  fm:25,bm:5,lbm:15,rpl:4,
-  total:25*60,rem:25*60,
-  comp:0,todaySecs:0,todayRounds:0,
-  iv:null
-};
+// ===== POMODORO =====
+const P = { mode: 'focus', running: false, fm: 25, bm: 5, lbm: 15, rpl: 4, total: 25*60, rem: 25*60, comp: 0, todaySecs: 0, todayRounds: 0, iv: null };
 
-function applySettings(){
-  if(P.running)return;
-  P.fm=+document.getElementById('sf').value||25;
-  P.bm=+document.getElementById('sb').value||5;
-  P.lbm=+document.getElementById('slb').value||15;
-  P.rpl=+document.getElementById('sr').value||4;
-  resetTimer();toast('✓ Configurações aplicadas');
+function applySettings() {
+  if (P.running) return;
+  P.fm = +document.getElementById('sf').value || 25;
+  P.bm = +document.getElementById('sb').value || 5;
+  P.lbm = +document.getElementById('slb').value || 15;
+  P.rpl = +document.getElementById('sr').value || 4;
+  resetTimer(); toast('✓ Configurações aplicadas');
 }
 
-function setMode(mode){
-  if(P.running)return;
-  P.mode=mode;
-  const mins=mode==='focus'?P.fm:mode==='break'?P.bm:P.lbm;
-  P.total=mins*60;P.rem=P.total;
-  updateUI();
-  document.getElementById('mf').className='mtab'+(mode==='focus'?' active':'');
-  document.getElementById('mb').className='mtab'+(mode==='break'?' bactive':'');
-  document.getElementById('mlb').className='mtab'+(mode==='longbreak'?' bactive':'');
+function setMode(mode) {
+  if (P.running) return;
+  P.mode = mode;
+  const mins = mode === 'focus' ? P.fm : mode === 'break' ? P.bm : P.lbm;
+  P.total = mins * 60; P.rem = P.total; updateUI();
+  document.getElementById('mf').className = 'mtab' + (mode === 'focus' ? ' active' : '');
+  document.getElementById('mb').className = 'mtab' + (mode === 'break' ? ' bactive' : '');
+  document.getElementById('mlb').className = 'mtab' + (mode === 'longbreak' ? ' bactive' : '');
 }
 
-function toggleTimer(){
-  if(!document.getElementById('ptema').value.trim()&&!P.running){
-    toast('⚠ Preencha o tema antes de iniciar','var(--o)');return;
-  }
-  if(P.running){
-    clearInterval(P.iv);P.running=false;
-    document.getElementById('playbtn').textContent='▶';
+function toggleTimer() {
+  if (!document.getElementById('ptema').value.trim() && !P.running) { toast('⚠ Preencha o tema antes de iniciar', 'var(--o)'); return; }
+  if (P.running) {
+    clearInterval(P.iv); P.running = false;
+    document.getElementById('playbtn').textContent = '▶';
     document.getElementById('playbtn').classList.remove('on');
     document.getElementById('pomo-dot').classList.remove('on');
-  }else{
-    P.running=true;
-    document.getElementById('playbtn').textContent='⏸';
+  } else {
+    P.running = true;
+    document.getElementById('playbtn').textContent = '⏸';
     document.getElementById('playbtn').classList.add('on');
     document.getElementById('pomo-dot').classList.add('on');
-    P.iv=setInterval(tick,1000);
+    P.iv = setInterval(tick, 1000);
   }
 }
 
-function tick(){
-  P.rem--;
-  if(P.mode==='focus')P.todaySecs++;
-  updateUI();
-  if(P.rem<=0)complete();
-}
+function tick() { P.rem--; if (P.mode === 'focus') P.todaySecs++; updateUI(); if (P.rem <= 0) complete(); }
 
-function complete(){
-  clearInterval(P.iv);P.running=false;
-  document.getElementById('playbtn').textContent='▶';
+function complete() {
+  clearInterval(P.iv); P.running = false;
+  document.getElementById('playbtn').textContent = '▶';
   document.getElementById('playbtn').classList.remove('on');
   document.getElementById('pomo-dot').classList.remove('on');
-  if(P.mode==='focus'){
-    P.comp++;P.todayRounds++;
+  if (P.mode === 'focus') {
+    P.comp++; P.todayRounds++;
     autoSave();
-    toast('🍅 Ciclo completo! Sessão salva.','var(--g)');
-    try{new Notification('🍅 Pomodoro!',{body:'Hora de descansar.'});}catch{}
-    if(P.comp%P.rpl===0)setMode('longbreak');
-    else setMode('break');
-  }else{
-    toast('⏰ Pausa terminada! Foco!','var(--y)');
+    toast('🍅 Ciclo completo! Sessão salva.', 'var(--g)');
+    try { new Notification('🍅 Pomodoro!', { body: 'Hora de descansar.' }); } catch {}
+    if (P.comp % P.rpl === 0) setMode('longbreak'); else setMode('break');
+  } else {
+    toast('⏰ Pausa terminada! Foco!', 'var(--y)');
     setMode('focus');
   }
-  renderRounds();updateInfo();
+  renderRounds(); updateInfo();
 }
 
-function autoSave(){
-  const trilha=document.getElementById('ptrilha').value;
-  const tema=document.getElementById('ptema').value.trim()||'Pomodoro';
-  const hours=+(P.fm/60).toFixed(2);
-  const logs=getLogs();
-  const idx=logs.findIndex(l=>l.date===today()&&l.trilha===trilha&&l.tema===tema&&l.pomo);
-  if(idx>=0)logs[idx].hours=+(logs[idx].hours+hours).toFixed(2);
-  else logs.push({id:Date.now(),date:today(),hours,trilha,tema,notes:'',pomo:true});
-  saveLogs(logs);updateInfo();
+function autoSave() {
+  const trilha = document.getElementById('ptrilha').value;
+  const tema = document.getElementById('ptema').value.trim() || 'Pomodoro';
+  const hours = +(P.fm / 60).toFixed(2);
+  const logs = getLogs();
+  const idx = logs.findIndex(l => l.date === today() && l.trilha === trilha && l.tema === tema && l.pomo);
+  if (idx >= 0) logs[idx].hours = +(logs[idx].hours + hours).toFixed(2);
+  else logs.push({ id: Date.now(), date: today(), hours, trilha, tema, notes: '', pomo: true });
+  saveLogs(logs); updateInfo();
 }
 
-function resetTimer(){
-  clearInterval(P.iv);P.running=false;
-  document.getElementById('playbtn').textContent='▶';
+function resetTimer() {
+  clearInterval(P.iv); P.running = false;
+  document.getElementById('playbtn').textContent = '▶';
   document.getElementById('playbtn').classList.remove('on');
   document.getElementById('pomo-dot').classList.remove('on');
-  const mins=P.mode==='focus'?P.fm:P.mode==='break'?P.bm:P.lbm;
-  P.total=mins*60;P.rem=P.total;updateUI();
+  const mins = P.mode === 'focus' ? P.fm : P.mode === 'break' ? P.bm : P.lbm;
+  P.total = mins * 60; P.rem = P.total; updateUI();
 }
 
-function skipSession(){clearInterval(P.iv);P.running=false;P.rem=0;complete();}
+function skipSession() { clearInterval(P.iv); P.running = false; P.rem = 0; complete(); }
 
-function updateUI(){
-  const m=String(Math.floor(P.rem/60)).padStart(2,'0');
-  const s=String(P.rem%60).padStart(2,'0');
-  document.getElementById('ptime').textContent=`${m}:${s}`;
-  const isFocus=P.mode==='focus';
-  document.getElementById('ptime').className='ptime '+(isFocus?'fc':'bc');
-  document.getElementById('pmlbl').textContent=P.mode==='focus'?'Foco':P.mode==='break'?'Pausa':'Pausa Longa';
-  const circ=578,offset=circ*(1-P.rem/P.total);
-  const ring=document.getElementById('ring');
-  ring.style.strokeDashoffset=circ-offset;
-  ring.style.stroke=isFocus?'var(--y)':'var(--g)';
+function updateUI() {
+  const m = String(Math.floor(P.rem / 60)).padStart(2, '0');
+  const s = String(P.rem % 60).padStart(2, '0');
+  document.getElementById('ptime').textContent = `${m}:${s}`;
+  const isFocus = P.mode === 'focus';
+  document.getElementById('ptime').className = 'ptime ' + (isFocus ? 'fc' : 'bc');
+  document.getElementById('pmlbl').textContent = P.mode === 'focus' ? 'Foco' : P.mode === 'break' ? 'Pausa' : 'Pausa Longa';
+  const circ = 578, offset = circ * (1 - P.rem / P.total);
+  const ring = document.getElementById('ring');
+  ring.style.strokeDashoffset = circ - offset;
+  ring.style.stroke = isFocus ? 'var(--y)' : 'var(--g)';
   updateInfo();
 }
 
-function updateInfo(){
-  const mins=Math.floor(P.todaySecs/60);
-  document.getElementById('pi-today').textContent=mins>=60?(mins/60).toFixed(1)+'h':mins+'min';
-  document.getElementById('pi-rounds').textContent=P.todayRounds;
-  document.getElementById('pi-trilha').textContent=document.getElementById('ptrilha').value||'—';
+function updateInfo() {
+  const mins = Math.floor(P.todaySecs / 60);
+  document.getElementById('pi-today').textContent = mins >= 60 ? (mins / 60).toFixed(1) + 'h' : mins + 'min';
+  document.getElementById('pi-rounds').textContent = P.todayRounds;
+  document.getElementById('pi-trilha').textContent = document.getElementById('ptrilha').value || '—';
 }
 
-function renderRounds(){
-  const el=document.getElementById('rounds-row');
-  el.innerHTML=Array.from({length:P.rpl},(_,i)=>{
-    const done=P.comp>0&&i<P.comp%P.rpl;
-    const cur=!done&&i===P.comp%P.rpl&&P.mode==='focus';
-    return`<div class="rdot${done?' done':cur?' cur':''}"></div>`;
+function renderRounds() {
+  const el = document.getElementById('rounds-row');
+  el.innerHTML = Array.from({ length: P.rpl }, (_, i) => {
+    const done = P.comp > 0 && i < P.comp % P.rpl;
+    const cur = !done && i === P.comp % P.rpl && P.mode === 'focus';
+    return `<div class="rdot${done ? ' done' : cur ? ' cur' : ''}"></div>`;
   }).join('');
 }
 
-// LOFI — streams de áudio direto
-const PRESETS=[
-  {n:'☁ Chillhop',      u:'https://streams.ilovemusic.de/iloveradio17.mp3',     emoji:'☁'},
-  {n:'🌧 Rain + Lofi',  u:'https://radio.stereoscenic.com/asp-s',               emoji:'🌧'},
-  {n:'🎹 Jazz Café',    u:'https://streaming.radio.co/s3f2987343/listen',        emoji:'🎹'},
-  {n:'🌿 Chill Beats',  u:'https://streams.ilovemusic.de/iloveradio2.mp3',       emoji:'🌿'},
-  {n:'🌙 Lo-fi Hip Hop',u:'https://usa9.fastcast4u.com/proxy/jamz?mp=/1',        emoji:'🌙'},
+// ===== LOFI =====
+const PRESETS = [
+  { n: '☁ Chillhop',      u: 'https://streams.ilovemusic.de/iloveradio17.mp3' },
+  { n: '🌧 Rain + Lofi',  u: 'https://radio.stereoscenic.com/asp-s' },
+  { n: '🎹 Jazz Café',    u: 'https://streaming.radio.co/s3f2987343/listen' },
+  { n: '🌿 Chill Beats',  u: 'https://streams.ilovemusic.de/iloveradio2.mp3' },
+  { n: '🌙 Lo-fi Hip Hop',u: 'https://usa9.fastcast4u.com/proxy/jamz?mp=/1' },
 ];
 
-let activePresetIdx=null;
+let activePresetIdx = null;
+let activePresetKey = null;
 
-function renderPresets(){
-  document.getElementById('lofi-presets').innerHTML=PRESETS.map((p,i)=>
+function renderPresets() {
+  const custom = getCustomStations();
+  const presetHTML = PRESETS.map((p, i) =>
     `<button class="lp" id="lp${i}" onclick="playLofi(${i})">${p.n}</button>`
   ).join('');
+  const customHTML = custom.map(s =>
+    `<span class="lp-custom">` +
+    `<button class="lp" id="lp-c-${s.key}" onclick="playCustomLofi('${s.key}','${s.name.replace(/'/g, '&#39;')}')">${s.emoji} ${s.name}</button>` +
+    `<button class="lp-del" onclick="event.stopPropagation();deleteCustomStation('${s.key}')" title="Remover">×</button>` +
+    `</span>`
+  ).join('');
+  document.getElementById('lofi-presets').innerHTML = presetHTML + customHTML;
 }
 
-function playLofi(i){
-  const audio=document.getElementById('lofi-audio');
-  // if same station clicked again → toggle off
-  if(activePresetIdx===i && !audio.paused){stopLofi();return;}
-
-  document.querySelectorAll('.lp').forEach(b=>b.classList.remove('active'));
-  document.getElementById('lp'+i).classList.add('active');
-  activePresetIdx=i;
-
-  const status=document.getElementById('lofi-status');
-  const stxt=document.getElementById('lofi-stxt');
-  status.style.display='flex';
-  stxt.textContent='Conectando...';
-
-  audio.src=PRESETS[i].u;
-  audio.volume=parseFloat(document.getElementById('lofi-vol').value);
+function playLofi(i) {
+  const audio = document.getElementById('lofi-audio');
+  if (activePresetIdx === i && !audio.paused) { stopLofi(); return; }
+  document.querySelectorAll('.lp').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lp' + i);
+  if (btn) btn.classList.add('active');
+  activePresetIdx = i; activePresetKey = null;
+  const status = document.getElementById('lofi-status');
+  const stxt = document.getElementById('lofi-stxt');
+  status.style.display = 'flex'; stxt.textContent = 'Conectando...';
+  audio.src = PRESETS[i].u;
+  audio.volume = parseFloat(document.getElementById('lofi-vol').value);
   audio.load();
   audio.play()
-    .then(()=>{ stxt.textContent=PRESETS[i].n+' ao vivo'; })
-    .catch(()=>{ stxt.textContent='Erro — tente outra estação'; });
+    .then(() => { stxt.textContent = PRESETS[i].n + ' ao vivo'; })
+    .catch(() => { stxt.textContent = 'Erro — tente outra estação'; });
 }
 
-function stopLofi(){
-  const audio=document.getElementById('lofi-audio');
-  audio.pause(); audio.src='';
-  document.getElementById('lofi-status').style.display='none';
-  document.querySelectorAll('.lp').forEach(b=>b.classList.remove('active'));
-  activePresetIdx=null;
+async function playCustomLofi(key, name) {
+  const audio = document.getElementById('lofi-audio');
+  if (activePresetKey === key && !audio.paused) { stopLofi(); return; }
+  document.querySelectorAll('.lp').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lp-c-' + key);
+  if (btn) btn.classList.add('active');
+  activePresetIdx = null; activePresetKey = key;
+  const status = document.getElementById('lofi-status');
+  const stxt = document.getElementById('lofi-stxt');
+  status.style.display = 'flex'; stxt.textContent = 'Carregando...';
+  try {
+    const buf = await idbGet(key);
+    if (!buf) { stxt.textContent = 'Arquivo não encontrado'; return; }
+    const blob = new Blob([buf], { type: 'audio/mpeg' });
+    audio.src = URL.createObjectURL(blob);
+    audio.volume = parseFloat(document.getElementById('lofi-vol').value);
+    await audio.play();
+    stxt.textContent = '🎵 ' + name;
+  } catch(e) { stxt.textContent = 'Erro ao carregar MP3'; }
 }
 
-function setVol(v){
-  document.getElementById('lofi-audio').volume=v;
-  document.getElementById('vol-label').textContent=Math.round(v*100)+'%';
+function stopLofi() {
+  const audio = document.getElementById('lofi-audio');
+  audio.pause(); audio.src = '';
+  document.getElementById('lofi-status').style.display = 'none';
+  document.querySelectorAll('.lp').forEach(b => b.classList.remove('active'));
+  activePresetIdx = null; activePresetKey = null;
 }
 
-// LOG MANUAL
-function addLog(){
-  const date=document.getElementById('inp-date').value;
-  const hours=parseFloat(document.getElementById('inp-hours').value);
-  const trilha=document.getElementById('inp-trilha').value;
-  const tema=document.getElementById('inp-tema').value.trim();
-  const notes=document.getElementById('inp-notes').value.trim();
-  if(!date||!hours||!trilha||!tema){toast('⚠ Preencha todos os campos','var(--o)');return;}
-  const logs=getLogs();
-  logs.push({id:Date.now(),date,hours,trilha,tema,notes,pomo:false});
+function setVol(v) {
+  document.getElementById('lofi-audio').volume = v;
+  document.getElementById('vol-label').textContent = Math.round(v * 100) + '%';
+}
+
+// ===== LOG MANUAL =====
+function addLog() {
+  const date = document.getElementById('inp-date').value;
+  const hours = parseFloat(document.getElementById('inp-hours').value);
+  const trilha = document.getElementById('inp-trilha').value;
+  const tema = document.getElementById('inp-tema').value.trim();
+  const notes = document.getElementById('inp-notes').value.trim();
+  if (!date || !hours || !trilha || !tema) { toast('⚠ Preencha todos os campos', 'var(--o)'); return; }
+  const logs = getLogs();
+  logs.push({ id: Date.now(), date, hours, trilha, tema, notes, pomo: false });
   saveLogs(logs);
-  document.getElementById('inp-hours').value='';
-  document.getElementById('inp-trilha').value='';
-  document.getElementById('inp-tema').value='';
-  document.getElementById('inp-notes').value='';
+  document.getElementById('inp-hours').value = '';
+  document.getElementById('inp-trilha').value = '';
+  document.getElementById('inp-tema').value = '';
+  document.getElementById('inp-notes').value = '';
   toast('✓ Registro salvo!');
 }
 
-// DASHBOARD
-const C={y:'#f0e040',b:'#40b4f0',g:'#40e0a0',r:'#f06060',p:'#a060f0',muted:'#6060a0'};
+// ===== DASHBOARD =====
+const C = { y: '#f0e040', b: '#40b4f0', g: '#40e0a0', r: '#f06060', p: '#a060f0', muted: '#6060a0' };
 
-function renderDash(){
-  const logs=getLogs(),wd=getWeekDates(),l7=getLast7(),tod=today();
-  const wl=logs.filter(l=>wd.includes(l.date));
-  const wh=wl.reduce((a,l)=>a+l.hours,0);
-  document.getElementById('sw-hours').textContent=fh(wh);
-  document.getElementById('sw-days').textContent=new Set(wl.map(l=>l.date)).size;
-  document.getElementById('sw-total').textContent=fh(logs.reduce((a,l)=>a+l.hours,0));
-  document.getElementById('sw-streak').textContent=streak(logs)+'🔥';
-
-  const hm=document.getElementById('week-hm');hm.innerHTML='';
-  wd.forEach(d=>{
-    const h=logs.filter(l=>l.date===d).reduce((a,l)=>a+l.hours,0);
-    const div=document.createElement('div');
-    div.className='wd'+(h>0?' studied':'')+(d===tod?' today':'');
-    div.innerHTML=`<div class="wdn">${dn(d)}</div><div class="wdd">${fd(d)}</div><div class="wdh">${h>0?fh(h):'—'}</div><div class="wddot"></div>`;
+function renderDash() {
+  const logs = getLogs(), wd = getWeekDates(), l7 = getLast7(), tod = today();
+  const wl = logs.filter(l => wd.includes(l.date));
+  const wh = wl.reduce((a, l) => a + l.hours, 0);
+  document.getElementById('sw-hours').textContent = fh(wh);
+  document.getElementById('sw-days').textContent = new Set(wl.map(l => l.date)).size;
+  document.getElementById('sw-total').textContent = fh(logs.reduce((a, l) => a + l.hours, 0));
+  document.getElementById('sw-streak').textContent = streak(logs) + '🔥';
+  const hm = document.getElementById('week-hm'); hm.innerHTML = '';
+  wd.forEach(d => {
+    const h = logs.filter(l => l.date === d).reduce((a, l) => a + l.hours, 0);
+    const div = document.createElement('div');
+    div.className = 'wd' + (h > 0 ? ' studied' : '') + (d === tod ? ' today' : '');
+    div.innerHTML = `<div class="wdn">${dn(d)}</div><div class="wdd">${fd(d)}</div><div class="wdh">${h > 0 ? fh(h) : '—'}</div><div class="wddot"></div>`;
     hm.appendChild(div);
   });
-
-  const bc=document.getElementById('barchart');bc.innerHTML='';
-  const maxH=Math.max(...l7.map(d=>logs.filter(l=>l.date===d).reduce((a,l)=>a+l.hours,0)),1);
-  l7.forEach(d=>{
-    const h=logs.filter(l=>l.date===d).reduce((a,l)=>a+l.hours,0);
-    const pct=(h/maxH)*100;
-    const w=document.createElement('div');w.className='bw';
-    w.innerHTML=`<div class="bar ${h>0?'full':''}" style="height:${Math.max(pct,2)}%"></div><div class="bl">${dn(d)}</div>`;
+  const bc = document.getElementById('barchart'); bc.innerHTML = '';
+  const maxH = Math.max(...l7.map(d => logs.filter(l => l.date === d).reduce((a, l) => a + l.hours, 0)), 1);
+  l7.forEach(d => {
+    const h = logs.filter(l => l.date === d).reduce((a, l) => a + l.hours, 0);
+    const pct = (h / maxH) * 100;
+    const w = document.createElement('div'); w.className = 'bw';
+    w.innerHTML = `<div class="bar ${h > 0 ? 'full' : ''}" style="height:${Math.max(pct, 2)}%"></div><div class="bl">${dn(d)}</div>`;
     bc.appendChild(w);
   });
-
-  const tp=document.getElementById('week-topics');
-  const topics=[...new Set(wl.map(l=>l.tema))];
-  tp.innerHTML=topics.length?topics.map(t=>`<span class="pill">${t}</span>`).join(''):`<span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Nenhum registro esta semana</span>`;
-
-  const td=document.getElementById('trilha-bd');
-  td.innerHTML='';
-  ['Full Stack','Power Platform','Projeto Prático','Revisão','Outros'].forEach((t,i)=>{
-    const h=logs.filter(l=>l.trilha===t).reduce((a,l)=>a+l.hours,0);
-    const cols=[C.b,C.p,C.g,C.muted,C.o];
-    td.innerHTML+=`<div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:${cols[i]};"></div><span style="font-family:var(--mono);font-size:11px;color:var(--muted);">${t}</span><span style="font-family:var(--mono);font-size:13px;font-weight:500;color:${cols[i]};">${fh(h)}</span></div>`;
+  const tp = document.getElementById('week-topics');
+  const topics = [...new Set(wl.map(l => l.tema))];
+  tp.innerHTML = topics.length ? topics.map(t => `<span class="pill">${t}</span>`).join('') : `<span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Nenhum registro esta semana</span>`;
+  const td = document.getElementById('trilha-bd'); td.innerHTML = '';
+  ['Full Stack', 'Power Platform', 'Projeto Prático', 'Revisão', 'Outros'].forEach((t, i) => {
+    const h = logs.filter(l => l.trilha === t).reduce((a, l) => a + l.hours, 0);
+    const cols = [C.b, C.p, C.g, C.muted, C.o];
+    td.innerHTML += `<div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:${cols[i]};"></div><span style="font-family:var(--mono);font-size:11px;color:var(--muted);">${t}</span><span style="font-family:var(--mono);font-size:13px;font-weight:500;color:${cols[i]};">${fh(h)}</span></div>`;
   });
 }
 
-// HISTÓRICO
-function renderHist(){
-  const logs=getLogs().sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('hist-sub').textContent=`${logs.length} registro${logs.length!==1?'s':''} · ${fh(logs.reduce((a,l)=>a+l.hours,0))} no total`;
-  const list=document.getElementById('log-list');
-  if(!logs.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div>Nenhum registro ainda.<br>Registre seu primeiro dia de estudo!</div>`;return;}
-  const tc={'Full Stack':'fs','Power Platform':'pp','Projeto Prático':'pr','Outros':'ot'};
-  list.innerHTML=logs.map(l=>`
+// ===== HISTÓRICO =====
+function renderHist() {
+  const logs = getLogs().sort((a, b) => b.date.localeCompare(a.date));
+  document.getElementById('hist-sub').textContent = `${logs.length} registro${logs.length !== 1 ? 's' : ''} · ${fh(logs.reduce((a, l) => a + l.hours, 0))} no total`;
+  const list = document.getElementById('log-list');
+  if (!logs.length) { list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>Nenhum registro ainda.<br>Registre seu primeiro dia de estudo!</div>`; return; }
+  const tc = { 'Full Stack': 'fs', 'Power Platform': 'pp', 'Projeto Prático': 'pr', 'Outros': 'ot' };
+  list.innerHTML = logs.map(l => `
     <div class="li">
       <div class="lidate">${fd(l.date)}<br><span style="font-size:9px;">${dn(l.date)}</span></div>
-      <div class="lih ${l.pomo?'pm':''}">${fh(l.hours)}</div>
+      <div class="lih ${l.pomo ? 'pm' : ''}">${fh(l.hours)}</div>
       <div class="lic">
-        <div class="lit ${tc[l.trilha]||''}">${l.trilha}${l.pomo?'<span class="pbadge">🍅 pomodoro</span>':''}</div>
+        <div class="lit ${tc[l.trilha] || ''}">${l.trilha}${l.pomo ? '<span class="pbadge">🍅 pomodoro</span>' : ''}</div>
         <div class="litm">${l.tema}</div>
-        ${l.notes?`<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;opacity:.7;">${l.notes}</div>`:''}
+        ${l.notes ? `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;opacity:.7;">${l.notes}</div>` : ''}
       </div>
       <button class="ldel" onclick="delLog(${l.id})">×</button>
     </div>`).join('');
 }
-function delLog(id){saveLogs(getLogs().filter(l=>l.id!==id));renderHist();toast('Removido','var(--r)');}
 
-// PLANO
-const PHASES=[
-  {c:'ph1',f:'Fase 1',t:'Sem 1–2',tr:'Full Stack',ti:'Fundamentos HTML/CSS',s:'Base visual — consolide Flexbox e Grid',topics:['HTML semântico','CSS seletores','Flexbox','CSS Grid','Responsividade','Media queries'],done:[0,1]},
-  {c:'ph2',f:'Fase 2',t:'Sem 3–6',tr:'Full Stack',ti:'JavaScript Fund. + Intermediário',s:'Ponto crítico — base de tudo que vem depois',topics:['Variáveis e tipos','Funções','Arrays e objetos','DOM manipulation','Eventos','fetch / APIs','Promises / async'],done:[]},
-  {c:'ph3',f:'Fase 3',t:'Sem 5–8',tr:'Power Platform',ti:'Power BI',s:'Resultado imediato no trabalho atual',topics:['Conexão de dados','Modelagem','DAX básico','Dashboards','Publicação'],done:[]},
-  {c:'ph4',f:'Fase 4',t:'Sem 7–10',tr:'Full Stack + Power Platform',ti:'Front-end Moderna + Power Automate',s:'React pré-requisitos + automações no trabalho',topics:['JS avançado','Front-end moderna Hashtag','Power Automate flows','Integrações M365','Projeto integrador'],done:[]},
-  {c:'ph5',f:'Fase 5',t:'Sem 11–16',tr:'Full Stack',ti:'React + Back-end Node.js',s:'Stack completa para apps web freelancer',topics:['Componentes','useState / useEffect','React Router','Node.js + Express','PostgreSQL','Auth JWT'],done:[]},
-  {c:'ph6',f:'Fase 6',t:'Sem 13–18',tr:'Power Platform',ti:'Power Apps',s:'Criar apps internos — potencializado pelo JS',topics:['Canvas Apps','Model-driven','Power Fx','Integração Automate','Publicação'],done:[]},
-  {c:'ph7',f:'Fase 7',t:'Sem 19+',tr:'Portfólio',ti:'Projetos Full Stack + Clientes',s:'Portfólio e primeiros freelances',topics:['Dashboard financeiro','Sistema agendamento','Painel admin','GitHub','Workana / 99Freelas','LinkedIn'],done:[]},
+function delLog(id) {
+  const logs = getLogs().filter(l => l.id !== id);
+  saveLogs(logs);
+  renderHist();
+  toast('Removido', 'var(--r)');
+}
+
+// ===== PLANO =====
+const PHASES = [
+  { c: 'ph1', f: 'Fase 1', t: 'Sem 1–2', tr: 'Full Stack', ti: 'Fundamentos HTML/CSS', s: 'Base visual — consolide Flexbox e Grid', topics: ['HTML semântico', 'CSS seletores', 'Flexbox', 'CSS Grid', 'Responsividade', 'Media queries'], done: [0, 1] },
+  { c: 'ph2', f: 'Fase 2', t: 'Sem 3–6', tr: 'Full Stack', ti: 'JavaScript Fund. + Intermediário', s: 'Ponto crítico — base de tudo que vem depois', topics: ['Variáveis e tipos', 'Funções', 'Arrays e objetos', 'DOM manipulation', 'Eventos', 'fetch / APIs', 'Promises / async'], done: [] },
+  { c: 'ph3', f: 'Fase 3', t: 'Sem 5–8', tr: 'Power Platform', ti: 'Power BI', s: 'Resultado imediato no trabalho atual', topics: ['Conexão de dados', 'Modelagem', 'DAX básico', 'Dashboards', 'Publicação'], done: [] },
+  { c: 'ph4', f: 'Fase 4', t: 'Sem 7–10', tr: 'Full Stack + Power Platform', ti: 'Front-end Moderna + Power Automate', s: 'React pré-requisitos + automações no trabalho', topics: ['JS avançado', 'Front-end moderna Hashtag', 'Power Automate flows', 'Integrações M365', 'Projeto integrador'], done: [] },
+  { c: 'ph5', f: 'Fase 5', t: 'Sem 11–16', tr: 'Full Stack', ti: 'React + Back-end Node.js', s: 'Stack completa para apps web freelancer', topics: ['Componentes', 'useState / useEffect', 'React Router', 'Node.js + Express', 'PostgreSQL', 'Auth JWT'], done: [] },
+  { c: 'ph6', f: 'Fase 6', t: 'Sem 13–18', tr: 'Power Platform', ti: 'Power Apps', s: 'Criar apps internos — potencializado pelo JS', topics: ['Canvas Apps', 'Model-driven', 'Power Fx', 'Integração Automate', 'Publicação'], done: [] },
+  { c: 'ph7', f: 'Fase 7', t: 'Sem 19+', tr: 'Portfólio', ti: 'Projetos Full Stack + Clientes', s: 'Portfólio e primeiros freelances', topics: ['Dashboard financeiro', 'Sistema agendamento', 'Painel admin', 'GitHub', 'Workana / 99Freelas', 'LinkedIn'], done: [] },
 ];
 
-function renderPlano(){
-  document.getElementById('phases').innerHTML=PHASES.map((p,i)=>{
-    const tops=p.topics.map((t,j)=>`<span class="topic${p.done.includes(j)?' done':''}">${t}</span>`).join('');
-    const prog=Math.round((p.done.length/p.topics.length)*100);
-    return`<div class="phase ${p.c}">
-      <div class="ptl"><div class="pdot"></div>${i<PHASES.length-1?'<div class="pline" style="min-height:55px;"></div>':''}</div>
+function renderPlano() {
+  document.getElementById('phases').innerHTML = PHASES.map((p, i) => {
+    const tops = p.topics.map((t, j) => `<span class="topic${p.done.includes(j) ? ' done' : ''}">${t}</span>`).join('');
+    const prog = Math.round((p.done.length / p.topics.length) * 100);
+    return `<div class="phase ${p.c}">
+      <div class="ptl"><div class="pdot"></div>${i < PHASES.length - 1 ? '<div class="pline" style="min-height:55px;"></div>' : ''}</div>
       <div class="pcard">
         <div class="phrow"><span class="pbadge2">${p.f}</span><span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:100px;background:rgba(255,255,255,.04);color:var(--muted);">${p.tr}</span><span class="ptime">${p.t}</span></div>
         <div class="ptitle">${p.ti}</div><div class="psub">${p.s}</div>
@@ -738,26 +1059,25 @@ function renderPlano(){
         <div class="progbar"><div class="progfill" style="width:${prog}%"></div></div>
       </div></div>`;
   }).join('');
-
-  // Outros card
-  const logs=getLogs();
-  const outrosLogs=logs.filter(l=>l.trilha==='Outros');
-  const outrosH=outrosLogs.reduce((a,l)=>a+l.hours,0);
-  document.getElementById('outros-total-h').textContent=fh(outrosH);
-  const outrosTemas=[...new Set(outrosLogs.map(l=>l.tema))].slice(0,8);
-  const orEl=document.getElementById('outros-recentes');
-  orEl.innerHTML=outrosTemas.length
-    ?outrosTemas.map(t=>`<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:100px;border:1px solid rgba(240,144,64,.25);background:rgba(240,144,64,.06);color:var(--o);">${t}</span>`).join('')
-    :`<span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Nenhum registro ainda em Outros</span>`;
-  const days=[{n:'Seg',t:'study',i:'📖',l:'Full Stack'},{n:'Ter',t:'pp',i:'⚡',l:'Power Platform'},{n:'Qua',t:'study',i:'📖',l:'Full Stack'},{n:'Qui',t:'pp',i:'⚡',l:'Power Platform'},{n:'Sex',t:'study',i:'📖',l:'Full Stack'},{n:'Sáb',t:'proj',i:'🛠️',l:'Projeto'},{n:'Dom',t:'rest',i:'🌙',l:'Descanso'}];
-  const dc={study:C.b,pp:C.p,proj:C.g,rest:C.muted};
-  sched.innerHTML=days.map(d=>`<div class="card-sm" style="text-align:center;border-color:${dc[d.t]}22;"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${dc[d.t]};margin-bottom:5px;">${d.n}</div><div style="font-size:17px;margin-bottom:3px;">${d.i}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);">${d.l}</div></div>`).join('');
+  const logs = getLogs();
+  const outrosLogs = logs.filter(l => l.trilha === 'Outros');
+  const outrosH = outrosLogs.reduce((a, l) => a + l.hours, 0);
+  document.getElementById('outros-total-h').textContent = fh(outrosH);
+  const outrosTemas = [...new Set(outrosLogs.map(l => l.tema))].slice(0, 8);
+  const orEl = document.getElementById('outros-recentes');
+  orEl.innerHTML = outrosTemas.length
+    ? outrosTemas.map(t => `<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:100px;border:1px solid rgba(240,144,64,.25);background:rgba(240,144,64,.06);color:var(--o);">${t}</span>`).join('')
+    : `<span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Nenhum registro ainda em Outros</span>`;
+  const days = [{ n: 'Seg', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Ter', t: 'pp', i: '⚡', l: 'Power Platform' }, { n: 'Qua', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Qui', t: 'pp', i: '⚡', l: 'Power Platform' }, { n: 'Sex', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Sáb', t: 'proj', i: '🛠️', l: 'Projeto' }, { n: 'Dom', t: 'rest', i: '🌙', l: 'Descanso' }];
+  const dc = { study: C.b, pp: C.p, proj: C.g, rest: C.muted };
+  document.getElementById('week-sched').innerHTML = days.map(d => `<div class="card-sm" style="text-align:center;border-color:${dc[d.t]}22;"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${dc[d.t]};margin-bottom:5px;">${d.n}</div><div style="font-size:17px;margin-bottom:3px;">${d.i}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);">${d.l}</div></div>`).join('');
 }
 
-// INIT
-document.getElementById('inp-date').value=today();
-renderPresets();renderRounds();updateUI();renderDash();renderPlano();
-if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+// ===== INIT =====
+document.getElementById('inp-date').value = today();
+renderPresets(); renderRounds(); updateUI(); renderDash(); renderPlano();
+if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+initFirebase();
 </script>
 </body>
 </html>
