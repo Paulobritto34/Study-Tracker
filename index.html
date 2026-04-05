@@ -495,7 +495,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-Q2GG6B94QL"
 };
 
-let _db = null, _auth = null, currentUser = null;
+let _db = null, _auth = null, currentUser = null, _unsubscribeSync = null;
 
 function initFirebase() {
   try {
@@ -506,10 +506,36 @@ function initFirebase() {
     _auth.onAuthStateChanged(user => {
       currentUser = user;
       updateAuthUI();
-      if (user) syncFromFirestore();
-      else setSyncDot('off');
+      if (user) startRealtimeSync();
+      else {
+        if (_unsubscribeSync) { _unsubscribeSync(); _unsubscribeSync = null; }
+        setSyncDot('off');
+      }
     });
   } catch(e) { console.warn('Firebase init failed:', e); }
+}
+
+function startRealtimeSync() {
+  if (_unsubscribeSync) { _unsubscribeSync(); _unsubscribeSync = null; }
+  if (!currentUser || !_db) return;
+  setSyncDot('syncing');
+  _unsubscribeSync = _db.collection('users').doc(currentUser.uid).collection('logs')
+    .onSnapshot(snap => {
+      const remoteLogs = snap.docs.map(d => d.data());
+      const localLogs = getLogs();
+      // Logs criados localmente que ainda não estão no Firestore (modo offline)
+      const localOnly = localLogs.filter(l => !remoteLogs.find(r => r.id === l.id));
+      // Firestore é a fonte de verdade; anexa apenas logs locais exclusivos
+      const merged = [...remoteLogs, ...localOnly];
+      merged.sort((a, b) => b.date.localeCompare(a.date));
+      localStorage.setItem(KEY, JSON.stringify(merged));
+      setSyncDot('synced');
+      renderDash();
+      renderHist();
+    }, err => {
+      console.warn('Realtime sync error:', err);
+      setSyncDot('off');
+    });
 }
 
 // ===== INDEXEDDB (armazenamento de MP3s locais) =====
@@ -588,25 +614,6 @@ async function syncToFirestore(logs) {
   }
 }
 
-async function syncFromFirestore() {
-  if (!currentUser || !_db) return;
-  setSyncDot('syncing');
-  try {
-    const snap = await _db.collection('users').doc(currentUser.uid).collection('logs').get();
-    const remoteLogs = snap.docs.map(d => d.data());
-    const localLogs = getLogs();
-    const merged = [...localLogs];
-    remoteLogs.forEach(r => { if (!merged.find(l => l.id === r.id)) merged.push(r); });
-    merged.sort((a, b) => b.date.localeCompare(a.date));
-    localStorage.setItem(KEY, JSON.stringify(merged));
-    toast('☁ Histórico sincronizado!', 'var(--b)');
-    setSyncDot('synced');
-    renderDash();
-  } catch(e) {
-    console.warn('Sync from Firestore error:', e);
-    setSyncDot('off');
-  }
-}
 
 // ===== AUTH UI =====
 function openAuthModal() {
@@ -663,6 +670,7 @@ async function submitAuth() {
 }
 
 async function doLogout() {
+  if (_unsubscribeSync) { _unsubscribeSync(); _unsubscribeSync = null; }
   if (_auth) await _auth.signOut();
   closeAuthModal();
   setSyncDot('off');
