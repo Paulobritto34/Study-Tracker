@@ -211,6 +211,8 @@ textarea{resize:vertical;min-height:70px;}
 .modal-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
 .modal-close:hover{color:var(--text);}
 .modal-err{font-family:var(--mono);font-size:11px;color:var(--r);margin-top:8px;min-height:16px;}
+.modal-box input:not([type=file]),.modal-box textarea{background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s;width:100%;box-sizing:border-box;}
+.modal-box input:not([type=file]):focus,.modal-box textarea:focus{border-color:var(--b);}
 .modal-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
 .mtab2{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;background:none;border:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
 .mtab2.active{color:var(--b);border-bottom-color:var(--b);}
@@ -256,19 +258,21 @@ textarea{resize:vertical;min-height:70px;}
   <div class="slabel">visão geral</div>
   <h2>Dashboard</h2>
   <p class="psub">Semana atual · acompanhamento da sua trilha</p>
-  <div class="stat-grid">
-    <div class="sc y"><div class="sl">Horas esta semana</div><div class="sv" id="sw-hours">0h</div><div class="ss">meta: 10h / semana</div></div>
-    <div class="sc b"><div class="sl">Dias estudados</div><div class="sv" id="sw-days">0</div><div class="ss">de 6 dias úteis</div></div>
-    <div class="sc g"><div class="sl">Total acumulado</div><div class="sv" id="sw-total">0h</div><div class="ss">desde o início</div></div>
-    <div class="sc p"><div class="sl">Sequência</div><div class="sv" id="sw-streak">0🔥</div><div class="ss">dias consecutivos</div></div>
+  <div id="dash-content">
+    <div class="stat-grid">
+      <div class="sc y"><div class="sl">Horas esta semana</div><div class="sv" id="sw-hours">0h</div><div class="ss">meta: 10h / semana</div></div>
+      <div class="sc b"><div class="sl">Dias estudados</div><div class="sv" id="sw-days">0</div><div class="ss">de 6 dias úteis</div></div>
+      <div class="sc g"><div class="sl">Total acumulado</div><div class="sv" id="sw-total">0h</div><div class="ss">desde o início</div></div>
+      <div class="sc p"><div class="sl">Sequência</div><div class="sv" id="sw-streak">0🔥</div><div class="ss">dias consecutivos</div></div>
+    </div>
+    <div class="slabel">esta semana</div>
+    <div class="week-row" id="week-hm"></div>
+    <div class="two-col">
+      <div class="card"><div class="slabel">horas por dia (últimos 7)</div><div class="bar-chart" id="barchart"></div></div>
+      <div class="card"><div class="slabel">temas desta semana</div><div id="week-topics" class="pills"></div></div>
+    </div>
+    <div class="card"><div class="slabel">horas por trilha (total)</div><div id="trilha-bd" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;"></div></div>
   </div>
-  <div class="slabel">esta semana</div>
-  <div class="week-row" id="week-hm"></div>
-  <div class="two-col">
-    <div class="card"><div class="slabel">horas por dia (últimos 7)</div><div class="bar-chart" id="barchart"></div></div>
-    <div class="card"><div class="slabel">temas desta semana</div><div id="week-topics" class="pills"></div></div>
-  </div>
-  <div class="card"><div class="slabel">horas por trilha (total)</div><div id="trilha-bd" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;"></div></div>
 </div>
 
 <!-- POMODORO -->
@@ -417,7 +421,10 @@ textarea{resize:vertical;min-height:70px;}
 <!-- PLANO -->
 <div class="page" id="page-plano">
   <div class="slabel">mapa mental · trilha personalizada</div>
-  <h2>Seu Plano de Estudos</h2>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+    <h2 style="margin:0;" id="plan-title-text">Seu Plano de Estudos</h2>
+    <button id="plan-settings-btn" onclick="openPlanSettings()" style="display:none;font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--muted);cursor:pointer;">⚙ configurar</button>
+  </div>
   <p class="psub">Full Stack (Hashtag) + Power Platform (Hashtag) · 1–2h por dia · ~8 meses</p>
   <div class="phases" id="phases"></div>
 
@@ -443,7 +450,7 @@ textarea{resize:vertical;min-height:70px;}
     <div class="slabel">rotina semanal</div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px;" id="week-sched"></div>
   </div>
-  <div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+  <div id="plan-milestones" style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
     <div class="card-sm" style="text-align:center;"><div style="font-family:var(--mono);font-size:20px;font-weight:500;color:var(--y);">3 meses</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;">Primeiro projeto no ar</div></div>
     <div class="card-sm" style="text-align:center;"><div style="font-family:var(--mono);font-size:20px;font-weight:500;color:var(--y);">5 meses</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;">Portfólio 2–3 projetos</div></div>
     <div class="card-sm" style="text-align:center;"><div style="font-family:var(--mono);font-size:20px;font-weight:500;color:var(--y);">6–8 meses</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;">Primeiro cliente freelancer</div></div>
@@ -478,6 +485,72 @@ textarea{resize:vertical;min-height:70px;}
 
 <div class="toast" id="toast"></div>
 
+<!-- MODAL: EDITAR FASE -->
+<div class="modal-overlay" id="phase-modal" onclick="if(event.target===this)closePhaseModal()">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closePhaseModal()">×</button>
+    <h3 id="phase-modal-title">Editar Fase</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="fg"><label>Rótulo</label><input id="pm-label" placeholder="Fase 1"></div>
+      <div class="fg"><label>Período</label><input id="pm-time" placeholder="Sem 1–2"></div>
+    </div>
+    <div class="fg" style="margin-top:10px;"><label>Trilha</label><input id="pm-track" placeholder="Full Stack"></div>
+    <div class="fg" style="margin-top:10px;"><label>Título</label><input id="pm-title" placeholder="Fundamentos HTML/CSS"></div>
+    <div class="fg" style="margin-top:10px;"><label>Subtítulo</label><input id="pm-subtitle" placeholder="Descrição curta da fase"></div>
+    <div class="fg" style="margin-top:10px;">
+      <label>Tópicos <span style="font-size:10px;color:var(--muted)">(um por linha)</span></label>
+      <textarea id="pm-topics" rows="5" placeholder="HTML semântico&#10;CSS seletores&#10;Flexbox" style="resize:vertical;"></textarea>
+    </div>
+    <div class="modal-err" id="phase-modal-err"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn" style="flex:1;text-align:center;" onclick="savePhaseModal()">Salvar fase</button>
+      <button id="pm-del-btn" class="btn" style="background:rgba(240,96,96,.1);color:var(--r);border:1px solid rgba(240,96,96,.3);display:none;" onclick="deletePhaseFromModal()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIGURAÇÕES DO PLANO -->
+<div class="modal-overlay" id="plan-settings-modal" onclick="if(event.target===this)closePlanSettings()">
+  <div class="modal-box" style="max-width:520px;max-height:85vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closePlanSettings()">×</button>
+    <h3>Configurações do Plano</h3>
+    <p class="modal-sub">Título, marcos de tempo e rotina semanal</p>
+    <div class="fg"><label>Título do plano</label><input id="ps-title" placeholder="Seu Plano de Estudos"></div>
+    <div class="fg" style="margin-top:10px;"><label>Subtítulo</label><input id="ps-subtitle" placeholder="Full Stack + Power Platform · 8 meses"></div>
+    <div style="margin-top:20px;">
+      <div class="slabel">marcos de tempo</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;">
+          <input id="ps-ms-time-0" placeholder="3 meses" style="font-family:var(--mono);font-size:11px;">
+          <input id="ps-ms-desc-0" placeholder="Primeiro projeto no ar">
+        </div>
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;">
+          <input id="ps-ms-time-1" placeholder="5 meses" style="font-family:var(--mono);font-size:11px;">
+          <input id="ps-ms-desc-1" placeholder="Portfólio 2–3 projetos">
+        </div>
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;">
+          <input id="ps-ms-time-2" placeholder="6–8 meses" style="font-family:var(--mono);font-size:11px;">
+          <input id="ps-ms-desc-2" placeholder="Primeiro cliente freelancer">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="slabel">rotina semanal</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding-bottom:4px;"><span>emoji</span><span></span><span>atividade</span></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Seg</span><input id="ps-day-emoji-0" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-0" placeholder="Full Stack"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Ter</span><input id="ps-day-emoji-1" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-1" placeholder="Power Platform"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Qua</span><input id="ps-day-emoji-2" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-2" placeholder="Full Stack"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Qui</span><input id="ps-day-emoji-3" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-3" placeholder="Power Platform"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Sex</span><input id="ps-day-emoji-4" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-4" placeholder="Full Stack"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Sáb</span><input id="ps-day-emoji-5" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-5" placeholder="Projeto"></div>
+        <div style="display:grid;grid-template-columns:40px 40px 1fr;gap:8px;align-items:center;"><span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Dom</span><input id="ps-day-emoji-6" style="text-align:center;font-size:16px;padding:4px;" maxlength="4"><input id="ps-day-activity-6" placeholder="Descanso"></div>
+      </div>
+    </div>
+    <button class="btn" style="width:100%;text-align:center;margin-top:20px;" onclick="savePlanSettings()">Salvar configurações</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -496,6 +569,7 @@ const FIREBASE_CONFIG = {
 };
 
 let _db = null, _auth = null, currentUser = null, _unsubscribeSync = null;
+let _logs = [], _plan = null;
 
 function initFirebase() {
   try {
@@ -519,16 +593,10 @@ function startRealtimeSync() {
   if (_unsubscribeSync) { _unsubscribeSync(); _unsubscribeSync = null; }
   if (!currentUser || !_db) return;
   setSyncDot('syncing');
+  loadPlan();
   _unsubscribeSync = _db.collection('users').doc(currentUser.uid).collection('logs')
     .onSnapshot(snap => {
-      const remoteLogs = snap.docs.map(d => d.data());
-      const localLogs = getLogs();
-      // Logs criados localmente que ainda não estão no Firestore (modo offline)
-      const localOnly = localLogs.filter(l => !remoteLogs.find(r => r.id === l.id));
-      // Firestore é a fonte de verdade; anexa apenas logs locais exclusivos
-      const merged = [...remoteLogs, ...localOnly];
-      merged.sort((a, b) => b.date.localeCompare(a.date));
-      localStorage.setItem(KEY, JSON.stringify(merged));
+      _logs = snap.docs.map(d => d.data()).sort((a, b) => b.date.localeCompare(a.date));
       setSyncDot('synced');
       renderDash();
       renderHist();
@@ -578,15 +646,12 @@ async function idbDelete(key) {
 }
 
 // ===== STORAGE =====
-const KEY = 'stv3';
 const CUSTOM_KEY = 'lofi-custom';
 
-function getLogs() {
-  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
-}
+function getLogs() { return _logs; }
 
 function saveLogs(l) {
-  try { localStorage.setItem(KEY, JSON.stringify(l)); } catch {}
+  _logs = l;
   if (currentUser && _db) syncToFirestore(l);
 }
 
@@ -672,8 +737,11 @@ async function submitAuth() {
 async function doLogout() {
   if (_unsubscribeSync) { _unsubscribeSync(); _unsubscribeSync = null; }
   if (_auth) await _auth.signOut();
+  _logs = [];
+  _plan = null;
   closeAuthModal();
   setSyncDot('off');
+  renderDash(); renderHist(); renderPlano();
   toast('Saiu da conta', 'var(--muted)');
 }
 
@@ -831,6 +899,7 @@ function complete() {
 }
 
 function autoSave() {
+  if (!currentUser) { toast('Faça login para salvar o ciclo', 'var(--r)'); return; }
   const trilha = document.getElementById('ptrilha').value;
   const tema = document.getElementById('ptema').value.trim() || 'Pomodoro';
   const hours = +(P.fm / 60).toFixed(2);
@@ -962,6 +1031,7 @@ function setVol(v) {
 
 // ===== LOG MANUAL =====
 function addLog() {
+  if (!currentUser) { toast('Faça login para salvar registros', 'var(--r)'); return; }
   const date = document.getElementById('inp-date').value;
   const hours = parseFloat(document.getElementById('inp-hours').value);
   const trilha = document.getElementById('inp-trilha').value;
@@ -982,6 +1052,26 @@ function addLog() {
 const C = { y: '#f0e040', b: '#40b4f0', g: '#40e0a0', r: '#f06060', p: '#a060f0', muted: '#6060a0' };
 
 function renderDash() {
+  if (!currentUser) {
+    document.getElementById('dash-content').innerHTML = `<div class="empty"><div class="empty-icon">🔒</div>Faça login para ver seu histórico e estatísticas.<br><button class="btn" style="margin-top:16px;" onclick="openAuthModal()">Entrar / Criar conta</button></div>`;
+    return;
+  }
+  if (!document.getElementById('sw-hours')) {
+    document.getElementById('dash-content').innerHTML = `
+      <div class="stat-grid">
+        <div class="sc y"><div class="sl">Horas esta semana</div><div class="sv" id="sw-hours">0h</div><div class="ss">meta: 10h / semana</div></div>
+        <div class="sc b"><div class="sl">Dias estudados</div><div class="sv" id="sw-days">0</div><div class="ss">de 6 dias úteis</div></div>
+        <div class="sc g"><div class="sl">Total acumulado</div><div class="sv" id="sw-total">0h</div><div class="ss">desde o início</div></div>
+        <div class="sc p"><div class="sl">Sequência</div><div class="sv" id="sw-streak">0🔥</div><div class="ss">dias consecutivos</div></div>
+      </div>
+      <div class="slabel">esta semana</div>
+      <div class="week-row" id="week-hm"></div>
+      <div class="two-col">
+        <div class="card"><div class="slabel">horas por dia (últimos 7)</div><div class="bar-chart" id="barchart"></div></div>
+        <div class="card"><div class="slabel">temas desta semana</div><div id="week-topics" class="pills"></div></div>
+      </div>
+      <div class="card"><div class="slabel">horas por trilha (total)</div><div id="trilha-bd" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;"></div></div>`;
+  }
   const logs = getLogs(), wd = getWeekDates(), l7 = getLast7(), tod = today();
   const wl = logs.filter(l => wd.includes(l.date));
   const wh = wl.reduce((a, l) => a + l.hours, 0);
@@ -1019,6 +1109,11 @@ function renderDash() {
 
 // ===== HISTÓRICO =====
 function renderHist() {
+  if (!currentUser) {
+    document.getElementById('hist-sub').textContent = '';
+    document.getElementById('log-list').innerHTML = `<div class="empty"><div class="empty-icon">🔒</div>Faça login para acessar seu histórico de estudos.<br><button class="btn" style="margin-top:16px;" onclick="openAuthModal()">Entrar / Criar conta</button></div>`;
+    return;
+  }
   const logs = getLogs().sort((a, b) => b.date.localeCompare(a.date));
   document.getElementById('hist-sub').textContent = `${logs.length} registro${logs.length !== 1 ? 's' : ''} · ${fh(logs.reduce((a, l) => a + l.hours, 0))} no total`;
   const list = document.getElementById('log-list');
@@ -1045,29 +1140,186 @@ function delLog(id) {
 }
 
 // ===== PLANO =====
-const PHASES = [
-  { c: 'ph1', f: 'Fase 1', t: 'Sem 1–2', tr: 'Full Stack', ti: 'Fundamentos HTML/CSS', s: 'Base visual — consolide Flexbox e Grid', topics: ['HTML semântico', 'CSS seletores', 'Flexbox', 'CSS Grid', 'Responsividade', 'Media queries'], done: [0, 1] },
-  { c: 'ph2', f: 'Fase 2', t: 'Sem 3–6', tr: 'Full Stack', ti: 'JavaScript Fund. + Intermediário', s: 'Ponto crítico — base de tudo que vem depois', topics: ['Variáveis e tipos', 'Funções', 'Arrays e objetos', 'DOM manipulation', 'Eventos', 'fetch / APIs', 'Promises / async'], done: [] },
-  { c: 'ph3', f: 'Fase 3', t: 'Sem 5–8', tr: 'Power Platform', ti: 'Power BI', s: 'Resultado imediato no trabalho atual', topics: ['Conexão de dados', 'Modelagem', 'DAX básico', 'Dashboards', 'Publicação'], done: [] },
-  { c: 'ph4', f: 'Fase 4', t: 'Sem 7–10', tr: 'Full Stack + Power Platform', ti: 'Front-end Moderna + Power Automate', s: 'React pré-requisitos + automações no trabalho', topics: ['JS avançado', 'Front-end moderna Hashtag', 'Power Automate flows', 'Integrações M365', 'Projeto integrador'], done: [] },
-  { c: 'ph5', f: 'Fase 5', t: 'Sem 11–16', tr: 'Full Stack', ti: 'React + Back-end Node.js', s: 'Stack completa para apps web freelancer', topics: ['Componentes', 'useState / useEffect', 'React Router', 'Node.js + Express', 'PostgreSQL', 'Auth JWT'], done: [] },
-  { c: 'ph6', f: 'Fase 6', t: 'Sem 13–18', tr: 'Power Platform', ti: 'Power Apps', s: 'Criar apps internos — potencializado pelo JS', topics: ['Canvas Apps', 'Model-driven', 'Power Fx', 'Integração Automate', 'Publicação'], done: [] },
-  { c: 'ph7', f: 'Fase 7', t: 'Sem 19+', tr: 'Portfólio', ti: 'Projetos Full Stack + Clientes', s: 'Portfólio e primeiros freelances', topics: ['Dashboard financeiro', 'Sistema agendamento', 'Painel admin', 'GitHub', 'Workana / 99Freelas', 'LinkedIn'], done: [] },
-];
+function getDefaultPlan() {
+  return {
+    title: 'Seu Plano de Estudos',
+    subtitle: 'Full Stack + Power Platform · 1–2h por dia · ~8 meses',
+    phases: [
+      { id: 'ph1', label: 'Fase 1', time: 'Sem 1–2', track: 'Full Stack', title: 'Fundamentos HTML/CSS', subtitle: 'Base visual — consolide Flexbox e Grid', topics: ['HTML semântico', 'CSS seletores', 'Flexbox', 'CSS Grid', 'Responsividade', 'Media queries'], done: [0, 1] },
+      { id: 'ph2', label: 'Fase 2', time: 'Sem 3–6', track: 'Full Stack', title: 'JavaScript Fund. + Intermediário', subtitle: 'Ponto crítico — base de tudo que vem depois', topics: ['Variáveis e tipos', 'Funções', 'Arrays e objetos', 'DOM manipulation', 'Eventos', 'fetch / APIs', 'Promises / async'], done: [] },
+      { id: 'ph3', label: 'Fase 3', time: 'Sem 5–8', track: 'Power Platform', title: 'Power BI', subtitle: 'Resultado imediato no trabalho atual', topics: ['Conexão de dados', 'Modelagem', 'DAX básico', 'Dashboards', 'Publicação'], done: [] },
+      { id: 'ph4', label: 'Fase 4', time: 'Sem 7–10', track: 'Full Stack + Power Platform', title: 'Front-end Moderna + Power Automate', subtitle: 'React pré-requisitos + automações no trabalho', topics: ['JS avançado', 'Front-end moderna Hashtag', 'Power Automate flows', 'Integrações M365', 'Projeto integrador'], done: [] },
+      { id: 'ph5', label: 'Fase 5', time: 'Sem 11–16', track: 'Full Stack', title: 'React + Back-end Node.js', subtitle: 'Stack completa para apps web freelancer', topics: ['Componentes', 'useState / useEffect', 'React Router', 'Node.js + Express', 'PostgreSQL', 'Auth JWT'], done: [] },
+      { id: 'ph6', label: 'Fase 6', time: 'Sem 13–18', track: 'Power Platform', title: 'Power Apps', subtitle: 'Criar apps internos — potencializado pelo JS', topics: ['Canvas Apps', 'Model-driven', 'Power Fx', 'Integração Automate', 'Publicação'], done: [] },
+      { id: 'ph7', label: 'Fase 7', time: 'Sem 19+', track: 'Portfólio', title: 'Projetos Full Stack + Clientes', subtitle: 'Portfólio e primeiros freelances', topics: ['Dashboard financeiro', 'Sistema agendamento', 'Painel admin', 'GitHub', 'Workana / 99Freelas', 'LinkedIn'], done: [] },
+    ],
+    milestones: [
+      { time: '3 meses', desc: 'Primeiro projeto no ar' },
+      { time: '5 meses', desc: 'Portfólio 2–3 projetos' },
+      { time: '6–8 meses', desc: 'Primeiro cliente freelancer' },
+    ],
+    weekSchedule: [
+      { day: 'Seg', activity: 'Full Stack', emoji: '📖', type: 'study' },
+      { day: 'Ter', activity: 'Power Platform', emoji: '⚡', type: 'pp' },
+      { day: 'Qua', activity: 'Full Stack', emoji: '📖', type: 'study' },
+      { day: 'Qui', activity: 'Power Platform', emoji: '⚡', type: 'pp' },
+      { day: 'Sex', activity: 'Full Stack', emoji: '📖', type: 'study' },
+      { day: 'Sáb', activity: 'Projeto', emoji: '🛠️', type: 'proj' },
+      { day: 'Dom', activity: 'Descanso', emoji: '🌙', type: 'rest' },
+    ]
+  };
+}
+
+async function loadPlan() {
+  if (!currentUser || !_db) return;
+  try {
+    const doc = await _db.collection('users').doc(currentUser.uid).collection('meta').doc('plan').get();
+    _plan = doc.exists ? doc.data() : getDefaultPlan();
+    if (!doc.exists) await _savePlanSilent();
+  } catch(e) { _plan = getDefaultPlan(); }
+  renderPlano();
+}
+
+async function savePlan() {
+  if (!currentUser || !_db || !_plan) return;
+  try {
+    await _db.collection('users').doc(currentUser.uid).collection('meta').doc('plan').set(_plan);
+    toast('Plano salvo', 'var(--g)');
+  } catch(e) { toast('Erro ao salvar plano', 'var(--r)'); }
+}
+
+async function _savePlanSilent() {
+  if (!currentUser || !_db || !_plan) return;
+  try { await _db.collection('users').doc(currentUser.uid).collection('meta').doc('plan').set(_plan); } catch(e) {}
+}
+
+function toggleTopicDone(phaseIdx, topicIdx) {
+  if (!currentUser || !_plan) return;
+  const done = _plan.phases[phaseIdx].done;
+  const idx = done.indexOf(topicIdx);
+  if (idx >= 0) done.splice(idx, 1); else done.push(topicIdx);
+  _savePlanSilent();
+  renderPlano();
+}
+
+// ===== PLANO EDIT =====
+let _editingPhaseIdx = -1;
+
+function openPhaseModal(idx) {
+  _editingPhaseIdx = idx;
+  const plan = _plan || getDefaultPlan();
+  const isNew = idx === -1;
+  document.getElementById('phase-modal-title').textContent = isNew ? 'Nova Fase' : 'Editar Fase';
+  const ph = isNew ? { label: '', time: '', track: '', title: '', subtitle: '', topics: [], done: [] } : plan.phases[idx];
+  document.getElementById('pm-label').value = ph.label;
+  document.getElementById('pm-time').value = ph.time;
+  document.getElementById('pm-track').value = ph.track;
+  document.getElementById('pm-title').value = ph.title;
+  document.getElementById('pm-subtitle').value = ph.subtitle;
+  document.getElementById('pm-topics').value = ph.topics.join('\n');
+  document.getElementById('pm-del-btn').style.display = isNew ? 'none' : 'inline-flex';
+  document.getElementById('phase-modal-err').textContent = '';
+  document.getElementById('phase-modal').classList.add('open');
+}
+
+function closePhaseModal() {
+  document.getElementById('phase-modal').classList.remove('open');
+}
+
+function savePhaseModal() {
+  const label = document.getElementById('pm-label').value.trim();
+  const title = document.getElementById('pm-title').value.trim();
+  if (!label || !title) { document.getElementById('phase-modal-err').textContent = 'Rótulo e Título são obrigatórios.'; return; }
+  const ph = {
+    id: _editingPhaseIdx === -1 ? 'ph_' + Date.now() : (_plan.phases[_editingPhaseIdx].id),
+    label, time: document.getElementById('pm-time').value.trim(),
+    track: document.getElementById('pm-track').value.trim(),
+    title, subtitle: document.getElementById('pm-subtitle').value.trim(),
+    topics: document.getElementById('pm-topics').value.split('\n').map(s => s.trim()).filter(Boolean),
+    done: _editingPhaseIdx === -1 ? [] : _plan.phases[_editingPhaseIdx].done
+  };
+  if (_editingPhaseIdx === -1) _plan.phases.push(ph);
+  else _plan.phases[_editingPhaseIdx] = ph;
+  savePlan(); renderPlano(); closePhaseModal();
+}
+
+function deletePhaseFromModal() {
+  if (_editingPhaseIdx < 0) return;
+  _plan.phases.splice(_editingPhaseIdx, 1);
+  savePlan(); renderPlano(); closePhaseModal();
+}
+
+function openPlanSettings() {
+  const plan = _plan || getDefaultPlan();
+  document.getElementById('ps-title').value = plan.title;
+  document.getElementById('ps-subtitle').value = plan.subtitle;
+  plan.milestones.forEach((m, i) => {
+    document.getElementById('ps-ms-time-' + i).value = m.time;
+    document.getElementById('ps-ms-desc-' + i).value = m.desc;
+  });
+  plan.weekSchedule.forEach((d, i) => {
+    document.getElementById('ps-day-emoji-' + i).value = d.emoji;
+    document.getElementById('ps-day-activity-' + i).value = d.activity;
+  });
+  document.getElementById('plan-settings-modal').classList.add('open');
+}
+
+function closePlanSettings() {
+  document.getElementById('plan-settings-modal').classList.remove('open');
+}
+
+function savePlanSettings() {
+  _plan.title = document.getElementById('ps-title').value.trim() || _plan.title;
+  _plan.subtitle = document.getElementById('ps-subtitle').value.trim();
+  _plan.milestones = _plan.milestones.map((m, i) => ({
+    time: document.getElementById('ps-ms-time-' + i).value.trim() || m.time,
+    desc: document.getElementById('ps-ms-desc-' + i).value.trim()
+  }));
+  _plan.weekSchedule = _plan.weekSchedule.map((d, i) => ({
+    ...d,
+    emoji: document.getElementById('ps-day-emoji-' + i).value.trim() || d.emoji,
+    activity: document.getElementById('ps-day-activity-' + i).value.trim() || d.activity
+  }));
+  savePlan(); renderPlano(); closePlanSettings();
+}
 
 function renderPlano() {
-  document.getElementById('phases').innerHTML = PHASES.map((p, i) => {
-    const tops = p.topics.map((t, j) => `<span class="topic${p.done.includes(j) ? ' done' : ''}">${t}</span>`).join('');
-    const prog = Math.round((p.done.length / p.topics.length) * 100);
-    return `<div class="phase ${p.c}">
-      <div class="ptl"><div class="pdot"></div>${i < PHASES.length - 1 ? '<div class="pline" style="min-height:55px;"></div>' : ''}</div>
+  const plan = _plan || getDefaultPlan();
+  const canEdit = !!currentUser;
+
+  // Atualiza título e subtítulo do plano
+  const titleEl = document.getElementById('plan-title-text');
+  const subtitleEl = document.querySelector('#page-plano .psub');
+  if (titleEl) titleEl.textContent = plan.title;
+  if (subtitleEl) subtitleEl.textContent = plan.subtitle;
+
+  // Botão de configurações
+  const settingsBtn = document.getElementById('plan-settings-btn');
+  if (settingsBtn) settingsBtn.style.display = canEdit ? 'inline-flex' : 'none';
+
+  document.getElementById('phases').innerHTML = plan.phases.map((p, i) => {
+    const tops = p.topics.map((t, j) => {
+      const isDone = p.done.includes(j);
+      return canEdit
+        ? `<span class="topic${isDone ? ' done' : ''}" onclick="toggleTopicDone(${i},${j})" style="cursor:pointer;" title="${isDone ? 'Marcar como não concluído' : 'Marcar como concluído'}">${t}</span>`
+        : `<span class="topic${isDone ? ' done' : ''}">${t}</span>`;
+    }).join('');
+    const prog = p.topics.length ? Math.round((p.done.length / p.topics.length) * 100) : 0;
+    const editBtn = canEdit ? `<button onclick="openPhaseModal(${i})" style="margin-left:auto;font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--muted);cursor:pointer;">✎ editar</button>` : '';
+    return `<div class="phase">
+      <div class="ptl"><div class="pdot"></div>${i < plan.phases.length - 1 ? '<div class="pline" style="min-height:55px;"></div>' : ''}</div>
       <div class="pcard">
-        <div class="phrow"><span class="pbadge2">${p.f}</span><span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:100px;background:rgba(255,255,255,.04);color:var(--muted);">${p.tr}</span><span class="ptime">${p.t}</span></div>
-        <div class="ptitle">${p.ti}</div><div class="psub">${p.s}</div>
+        <div class="phrow"><span class="pbadge2">${p.label}</span><span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:100px;background:rgba(255,255,255,.04);color:var(--muted);">${p.track}</span><span class="ptime">${p.time}</span>${editBtn}</div>
+        <div class="ptitle">${p.title}</div><div class="psub">${p.subtitle}</div>
         <div class="topics">${tops}</div>
         <div class="progbar"><div class="progfill" style="width:${prog}%"></div></div>
       </div></div>`;
   }).join('');
+
+  if (canEdit) {
+    document.getElementById('phases').innerHTML += `<div style="margin-top:16px;"><button onclick="openPhaseModal(-1)" style="font-family:var(--mono);font-size:11px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,.04);border:1px dashed var(--border2);color:var(--muted);cursor:pointer;width:100%;text-align:center;">+ Nova Fase</button></div>`;
+  }
+
   const logs = getLogs();
   const outrosLogs = logs.filter(l => l.trilha === 'Outros');
   const outrosH = outrosLogs.reduce((a, l) => a + l.hours, 0);
@@ -1077,9 +1329,12 @@ function renderPlano() {
   orEl.innerHTML = outrosTemas.length
     ? outrosTemas.map(t => `<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:100px;border:1px solid rgba(240,144,64,.25);background:rgba(240,144,64,.06);color:var(--o);">${t}</span>`).join('')
     : `<span style="font-family:var(--mono);font-size:11px;color:var(--muted);">Nenhum registro ainda em Outros</span>`;
-  const days = [{ n: 'Seg', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Ter', t: 'pp', i: '⚡', l: 'Power Platform' }, { n: 'Qua', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Qui', t: 'pp', i: '⚡', l: 'Power Platform' }, { n: 'Sex', t: 'study', i: '📖', l: 'Full Stack' }, { n: 'Sáb', t: 'proj', i: '🛠️', l: 'Projeto' }, { n: 'Dom', t: 'rest', i: '🌙', l: 'Descanso' }];
+
   const dc = { study: C.b, pp: C.p, proj: C.g, rest: C.muted };
-  document.getElementById('week-sched').innerHTML = days.map(d => `<div class="card-sm" style="text-align:center;border-color:${dc[d.t]}22;"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${dc[d.t]};margin-bottom:5px;">${d.n}</div><div style="font-size:17px;margin-bottom:3px;">${d.i}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);">${d.l}</div></div>`).join('');
+  document.getElementById('week-sched').innerHTML = plan.weekSchedule.map(d => `<div class="card-sm" style="text-align:center;border-color:${dc[d.type] || C.muted}22;"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${dc[d.type] || C.muted};margin-bottom:5px;">${d.day}</div><div style="font-size:17px;margin-bottom:3px;">${d.emoji}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);">${d.activity}</div></div>`).join('');
+
+  const msEl = document.getElementById('plan-milestones');
+  if (msEl) msEl.innerHTML = plan.milestones.map(m => `<div class="card-sm" style="text-align:center;"><div style="font-family:var(--mono);font-size:20px;font-weight:500;color:var(--y);">${m.time}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;">${m.desc}</div></div>`).join('');
 }
 
 // ===== INIT =====
