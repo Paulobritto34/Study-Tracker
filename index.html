@@ -485,6 +485,22 @@ textarea{resize:vertical;min-height:70px;}
 
 <div class="toast" id="toast"></div>
 
+<!-- MODAL: NOTA RÁPIDA PÓS-POMODORO -->
+<div class="modal-overlay" id="quick-note-modal" onclick="if(event.target===this)closeQuickNote()">
+  <div class="modal-box" style="max-width:400px;">
+    <button class="modal-close" onclick="closeQuickNote()">×</button>
+    <h3>🍅 Ciclo completo!</h3>
+    <p class="modal-sub">O que você aprendeu nessa sessão?</p>
+    <div class="fg">
+      <textarea id="quick-note-text" rows="4" placeholder="Insights, dificuldades, próximos passos..." style="resize:vertical;min-height:90px;"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn" style="flex:1;text-align:center;" onclick="saveQuickNote()">Salvar nota</button>
+      <button class="btn" style="background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border2);" onclick="closeQuickNote()">Pular</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: EDITAR FASE -->
 <div class="modal-overlay" id="phase-modal" onclick="if(event.target===this)closePhaseModal()">
   <div class="modal-box" style="max-width:480px;">
@@ -888,9 +904,9 @@ function complete() {
   if (P.mode === 'focus') {
     P.comp++; P.todayRounds++;
     autoSave();
-    toast('🍅 Ciclo completo! Sessão salva.', 'var(--g)');
     try { new Notification('🍅 Pomodoro!', { body: 'Hora de descansar.' }); } catch {}
     if (P.comp % P.rpl === 0) setMode('longbreak'); else setMode('break');
+    openQuickNote();
   } else {
     toast('⏰ Pausa terminada! Foco!', 'var(--y)');
     setMode('focus');
@@ -905,9 +921,28 @@ function autoSave() {
   const hours = +(P.fm / 60).toFixed(2);
   const logs = getLogs();
   const idx = logs.findIndex(l => l.date === today() && l.trilha === trilha && l.tema === tema && l.pomo);
-  if (idx >= 0) logs[idx].hours = +(logs[idx].hours + hours).toFixed(2);
-  else logs.push({ id: Date.now(), date: today(), hours, trilha, tema, notes: '', pomo: true });
+  if (idx >= 0) { logs[idx].hours = +(logs[idx].hours + hours).toFixed(2); _lastPomoLogId = logs[idx].id; }
+  else { const newLog = { id: Date.now(), date: today(), hours, trilha, tema, notes: '', pomo: true }; logs.push(newLog); _lastPomoLogId = newLog.id; }
   saveLogs(logs); updateInfo();
+}
+
+function openQuickNote() {
+  document.getElementById('quick-note-text').value = '';
+  document.getElementById('quick-note-modal').classList.add('open');
+  setTimeout(() => document.getElementById('quick-note-text').focus(), 100);
+}
+
+function closeQuickNote() {
+  document.getElementById('quick-note-modal').classList.remove('open');
+}
+
+function saveQuickNote() {
+  const note = document.getElementById('quick-note-text').value.trim();
+  closeQuickNote();
+  if (!note || !_lastPomoLogId) return;
+  const logs = getLogs();
+  const idx = logs.findIndex(l => l.id === _lastPomoLogId);
+  if (idx >= 0) { logs[idx].notes = note; saveLogs(logs); toast('✓ Nota salva!', 'var(--g)'); }
 }
 
 function resetTimer() {
@@ -962,6 +997,7 @@ const PRESETS = [
 
 let activePresetIdx = null;
 let activePresetKey = null;
+let _lastPomoLogId = null;
 
 function renderPresets() {
   const custom = getCustomStations();
